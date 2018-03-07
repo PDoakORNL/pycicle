@@ -115,8 +115,10 @@ if (NOT PYCICLE_PR STREQUAL "master")
   # to fetch the merged branch so that the update step shows the
   # files that are different in the branch from master
   #
+  # The below can partially fail without it being obvious,
+  # the -e should stop that, not sure if the check of failed is necessary
   message(
-    "COMMAND bash \"-c\" \"${make_repo_copy_}
+    "COMMAND bash \"-c\" \"-e\" \"${make_repo_copy_}
                        cd ${CTEST_SOURCE_DIRECTORY};
                        ${CTEST_GIT_COMMAND} checkout ${PYCICLE_MASTER};
                        ${CTEST_GIT_COMMAND} pull origin master;
@@ -126,7 +128,6 @@ if (NOT PYCICLE_PR STREQUAL "master")
                        ${CTEST_GIT_COMMAND} pull origin ${PYCICLE_BRANCH};
                        ${CTEST_GIT_COMMAND} checkout ${PYCICLE_MASTER};
                        ${CTEST_GIT_COMMAND} clean -fd;\"
-
     WORKING_DIRECTORY \"${WORK_DIR}\"
     OUTPUT_VARIABLE output
     ERROR_VARIABLE  output
@@ -137,7 +138,7 @@ if (NOT PYCICLE_PR STREQUAL "master")
 
   set(WORK_DIR "${PYCICLE_PR_ROOT}")
   execute_process(
-    COMMAND bash "-c" "${make_repo_copy_}
+    COMMAND bash "-c" "-e" "${make_repo_copy_}
                        cd ${CTEST_SOURCE_DIRECTORY};
                        ${CTEST_GIT_COMMAND} checkout ${PYCICLE_MASTER};
                        ${CTEST_GIT_COMMAND} pull origin master;
@@ -152,6 +153,10 @@ if (NOT PYCICLE_PR STREQUAL "master")
     ERROR_VARIABLE  output
     RESULT_VARIABLE failed
   )
+  if ( failed EQUAL 1 )
+    MESSAGE( FATAL_ERROR "Update failed in ${CMAKE_CURRENT_LIST_FILE}. "
+      "Can you access github from the build location?" )
+  endif ( failted EQUAL 1 )
  #${CTEST_GIT_COMMAND} checkout ${PYCICLE_MASTER};
  #                        ${CTEST_GIT_COMMAND} merge --no-edit -s recursive -X theirs origin/${PYCICLE_BRANCH};"
 
@@ -160,7 +165,7 @@ else()
   set(CTEST_SUBMISSION_TRACK "Master")
   set(WORK_DIR "${PYCICLE_PR_ROOT}")
   execute_process(
-    COMMAND bash "-c" "${make_repo_copy_}
+    COMMAND bash "-c" "-e" "${make_repo_copy_}
                        cd ${CTEST_SOURCE_DIRECTORY};
                        ${CTEST_GIT_COMMAND} checkout ${PYCICLE_MASTER};
                        ${CTEST_GIT_COMMAND} fetch origin;
@@ -170,7 +175,10 @@ else()
     ERROR_VARIABLE  output
     RESULT_VARIABLE failed
   )
-  message("Process output copy : " ${output})
+  if ( failed EQUAL 1 )
+    MESSAGE( FATAL_ERROR "Update failed in ${CMAKE_CURRENT_LIST_FILE}. "
+      "Can you access github from the build location?" )
+  endif ( failted EQUAL 1 )
 endif()
 
 #######################################################################
