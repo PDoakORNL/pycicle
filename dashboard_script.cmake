@@ -18,10 +18,10 @@ message("master branch is " ${PYCICLE_MASTER})
 message("Machine name is  " ${PYCICLE_HOST})
 message("PYCICLE_ROOT is  " ${PYCICLE_ROOT})
 message("Random string is " ${PYCICLE_RANDOM})
-message("COMPILER type is      " ${PYCICLE_COMPILER_TYPE})
-message("COMPILER is      " ${PYCICLE_COMPILER})
+message("COMPILER type is " ${PYCICLE_COMPILER_TYPE})
 message("BOOST is         " ${PYCICLE_BOOST})
 message("Build type is    " ${PYCICLE_BUILD_TYPE})
+
 #######################################################################
 # need to make this a passed in option
 #######################################################################
@@ -156,7 +156,8 @@ if (NOT PYCICLE_PR STREQUAL "master")
   if ( failed EQUAL 1 )
     MESSAGE( FATAL_ERROR "Update failed in ${CMAKE_CURRENT_LIST_FILE}. "
       "Can you access github from the build location?" )
-  endif ( failted EQUAL 1 )
+  endif ( failed EQUAL 1 )
+
  #${CTEST_GIT_COMMAND} checkout ${PYCICLE_MASTER};
  #                        ${CTEST_GIT_COMMAND} merge --no-edit -s recursive -X theirs origin/${PYCICLE_BRANCH};"
 
@@ -178,7 +179,7 @@ else()
   if ( failed EQUAL 1 )
     MESSAGE( FATAL_ERROR "Update failed in ${CMAKE_CURRENT_LIST_FILE}. "
       "Can you access github from the build location?" )
-  endif ( failted EQUAL 1 )
+  endif ( failed EQUAL 1 )
 endif()
 
 #######################################################################
