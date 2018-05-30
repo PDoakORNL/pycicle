@@ -29,7 +29,7 @@ set(CMAKE_VER            "3.9.1")
 
 if (PYCICLE_COMPILER_TYPE MATCHES "gcc")
   set(GCC_VER             "5.3.0")
-  set(PYCICLE_BUILD_STAMP "MagmaCudaP100-gcc-${GCC_VER}")
+  set(PYCICLE_BUILD_STAMP "gpu-trunk-gcc-${GCC_VER}")
   #
   #set(INSTALL_ROOT     "/apps/daint/UES/6.0.UP04/HPX")
   #
