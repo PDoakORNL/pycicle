@@ -166,7 +166,7 @@ def debug_print(*text):
 #--------------------------------------------------------------------------
 # launch a command that will start one build
 #--------------------------------------------------------------------------
-def launch_build(nickname, compiler_type, branch_id, branch_name) :
+def launch_build(nickname, compiler_type, branch_id, branch_name, branch_repo='origin') :
     """ Calls the dashboard script, possibly remotely
         pyc_p is a global PycicleParams object
         ToDo: make pycicle runner into a class to get control of variable scope lifecycle
@@ -220,6 +220,7 @@ def launch_build(nickname, compiler_type, branch_id, branch_name) :
                   '-DPYCICLE_CONFIG_PATH='          + pyc_p.config_path,
                   '-DPYCICLE_GITHUB_PROJECT_NAME=' + github_reponame,
                   '-DPYCICLE_PR='                  + branch_id,
+                  '-DPYCICLE_BRANCH_REPO='         + branch_repo,
                   '-DPYCICLE_BRANCH='              + branch_name,
                   '-DPYCICLE_RANDOM='              + random_string(10),
                   '-DPYCICLE_COMPILER_TYPE='       + compiler_type,
@@ -258,14 +259,14 @@ def launch_build(nickname, compiler_type, branch_id, branch_name) :
 #--------------------------------------------------------------------------
 # launch one build from a list of options
 #--------------------------------------------------------------------------
-def choose_and_launch(project, machine, branch_id, branch_name, compiler_type) :
-    pyc_p.debug_print("Begin : choose_and_launch", project, machine, branch_id, branch_name)
+def choose_and_launch(project, machine, branch_id, branch_name, compiler_type, branch_repo='origin') :
+    pyc_p.debug_print("Begin : choose_and_launch", project, machine, branch_id, branch_name, branch_repo)
     if project=='hpx' and machine=='daint':
         if bool(random.getrandbits(1)):
             compiler_type = 'gcc'
         else:
             compiler_type = 'clang'
-    launch_build(machine, compiler_type, branch_id, branch_name)
+    launch_build(machine, compiler_type, branch_id, branch_name, branch_repo)
 
 #--------------------------------------------------------------------------
 # Utility function to remove a file from a remote filesystem
@@ -404,7 +405,7 @@ def random_string(N):
 #--------------------------------------------------------------------------
 # Check if a PR Needs and Update
 #--------------------------------------------------------------------------
-def needs_update(project_name, branch_id, branch_name, branch_sha, base_sha):
+def needs_update(project_name, branch_id, branch_name, branch_sha, base_sha, branch_repo='origin'):
     directory     = args.pycicle_dir + '/src/' + project_name + '-' + branch_id
     status_file   = directory + '/last_pr_sha.txt'
     update        = False
@@ -621,12 +622,15 @@ if __name__ == "__main__":
                 try:
                     pyc_p.debug_print('-' * 30)
                     pyc_p.debug_print(pr)
-                    pyc_p.debug_print('Repo to merge from   :', pr.head.repo.owner.login)
+                    pyc_p.debug_print('Repo to merge from   : {}/{}'.format(pr.head.repo.owner.login, pr.head.repo.name))
                     pyc_p.debug_print('Branch to merge from :', pr.head.ref)
                     if pr.head.repo.owner.login==github_organisation:
                         pyc_p.debug_print('Pull request is from branch local to repo')
+                        branch_repo = 'origin'
                     else:
                         pyc_p.debug_print('Pull request is from branch of forked repo')
+                        branch_repo = pr.head.repo.owner.login
+                    #this is not actually true
                     pyc_p.debug_print('git pull https://github.com/' + pr.head.repo.owner.login
                                       + '/' + github_reponame + '.git' + ' ' + pr.head.ref)
                     pyc_p.debug_print('-' * 30)
@@ -637,9 +641,14 @@ if __name__ == "__main__":
                 branch_id   = str(pr.number)
                 branch_name = pr.head.label.rsplit(':',1)[1]
                 branch_sha  = pr.head.sha
-                # need details, including last commit on PR for setting status
+                # if pr.head.repo.ssh_url != repo.ssh_url:
+                #     branch_repo = pr.head.repo.ssh_url
+                #     print("Branch Repo: ", branch_repo)
+                # else:
+                #     branch_repo = 'origin'
+                #     # need details, including last commit on PR for setting status
                 last_pr_commit = pr.get_commits().reversed[0]
-                pr_list[branch_id] = [machine, branch_name, last_pr_commit]
+                pr_list[branch_id] = [machine, branch_repo, branch_name, last_pr_commit]
                 #
                 if args.pull_request!=0 and pr.number!=args.pull_request:
                     continue
@@ -649,23 +658,24 @@ if __name__ == "__main__":
                 if not args.scrape_only:
                     #minimal security, only if last commit by org members or owner is it updated or built.   
                     commit_author = last_pr_commit.author
-                    update = force or needs_update(args.project, branch_id, branch_name, branch_sha, base_sha)
+                    update = force or needs_update(args.project, branch_id, branch_name,
+                                                   branch_sha, base_sha, branch_repo=branch_repo)
                     if args.access_control:
                         if org:
                             if org.has_in_members(commit_author):
                                 if update:
-                                    choose_and_launch(args.project, machine, branch_id, branch_name, compiler_type)
+                                    choose_and_launch(args.project, machine, branch_id, branch_name, compiler_type, branch_repo=branch_repo)
                             else:
                                 print("{} is not a member of the organisation, PR will not be built.".format(commit_author.login))
                         else:
                             permission = repo.get_collaborator_permission(commit_author)
                             if 'push' in permission:
                                 if update:
-                                    choose_and_launch(args.project, machine, branch_id, branch_name, compiler_type)
+                                    choose_and_launch(args.project, machine, branch_id, branch_name, compiler_type, branch_repo=branch_repo)
                             else:
                                 print("{} does not have push access, PR will not be built.".format(commit_author.login))
                     else:
-                        choose_and_launch(args.project, machine, branch_id, branch_name, compiler_type)
+                        choose_and_launch(args.project, machine, branch_id, branch_name, compiler_type, branch_repo=branch_repo)
 
             print("The Open PRs:")
             print(pr_list)
@@ -673,7 +683,7 @@ if __name__ == "__main__":
             if not args.scrape_only and args.pull_request==0:
                 if force or needs_update(args.project, github_base, github_base, base_sha, base_sha):
                     choose_and_launch(args.project, machine, github_base, github_base, compiler_type)
-                    pr_list[github_base] = [machine, github_base, base_branch.commit, ""]
+                    pr_list[github_base] = [machine, 'origin', github_base, base_branch.commit, ""]
 
             scrape_t2    = datetime.datetime.now()
             scrape_tdiff = scrape_t2 - scrape_t1
@@ -688,7 +698,7 @@ if __name__ == "__main__":
                         scrape_testing_results(
                             args.project,
                             pr_list[branch_id][0], builds_done.get(branch_id),
-                            branch_id, pr_list[branch_id][1], pr_list[branch_id][2])
+                            branch_id, pr_list[branch_id][2], pr_list[branch_id][3])
                     else:
                         # just delete the file, it is probably an old one
                         erase_file(

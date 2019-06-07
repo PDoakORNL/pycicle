@@ -15,6 +15,7 @@ message("Github org is    " ${PYCICLE_GITHUB_ORGANISATION})
 message("Github user name is    " ${PYCICLE_GITHUB_USER_LOGIN})
 message("Pull request is  " ${PYCICLE_PR})
 message("PR-Branchname is " ${PYCICLE_BRANCH})
+message("PR-REPO is " ${PYCICLE_BRANCH_REPO})
 message("Base branch is   " ${PYCICLE_BASE})
 message("Machine name is  " ${PYCICLE_HOST})
 message("PYCICLE_ROOT is  " ${PYCICLE_ROOT})
@@ -102,7 +103,8 @@ endif()
 #####################################################################
 if (NOT PYCICLE_PR STREQUAL "${PYCICLE_BASE}")
   set(CTEST_SUBMISSION_TRACK "Pull_Requests")
-  set(PYCICLE_BRANCH "pull/${PYCICLE_PR}/head")
+  set(PYCICLE_BRANCH_PULL "pull/${PYCICLE_PR}/head")
+  set(PYCICLE_BRANCH_REPO "${PYCICLE_BRANCH_REPO}")
   set(GIT_BRANCH "PYCICLE_PR_${PYCICLE_PR}")
   #
   # Note: Unless configured otherwise PYCICLE_BASE="master" or the default
@@ -152,7 +154,7 @@ if (NOT PYCICLE_PR STREQUAL "${PYCICLE_BASE}")
                        ${CTEST_GIT_COMMAND} pull origin ${PYCICLE_BASE};
                        ${CTEST_GIT_COMMAND} reset --hard origin/${PYCICLE_BASE};
                        ${CTEST_GIT_COMMAND} checkout -b ${GIT_BRANCH};
-                       ${CTEST_GIT_COMMAND} pull origin ${PYCICLE_BRANCH};
+                       ${CTEST_GIT_COMMAND} pull ${PYCICLE_BRANCH_REPO} ${PYCICLE_BRANCH};
                        ${CTEST_GIT_COMMAND} checkout ${PYCICLE_BASE};
                        ${CTEST_GIT_COMMAND} clean -fd;"
     WORKING_DIRECTORY "${WORK_DIR}"
