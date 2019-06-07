@@ -641,6 +641,7 @@ if __name__ == "__main__":
                 branch_id   = str(pr.number)
                 branch_name = pr.head.label.rsplit(':',1)[1]
                 branch_sha  = pr.head.sha
+                branch_repo = pr.head.repo.ssh_url
                 # if pr.head.repo.ssh_url != repo.ssh_url:
                 #     branch_repo = pr.head.repo.ssh_url
                 #     print("Branch Repo: ", branch_repo)
