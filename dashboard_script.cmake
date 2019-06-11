@@ -103,7 +103,7 @@ endif()
 #####################################################################
 if (NOT PYCICLE_PR STREQUAL "${PYCICLE_BASE}")
   set(CTEST_SUBMISSION_TRACK "Pull_Requests")
-  set(PYCICLE_BRANCH_PULL "pull/${PYCICLE_PR}/head")
+  # set(PYCICLE_BRANCH_PULL "pull/${PYCICLE_PR}/head")
   set(PYCICLE_BRANCH_REPO "${PYCICLE_BRANCH_REPO}")
   set(GIT_BRANCH "PYCICLE_PR_${PYCICLE_PR}")
   #
@@ -168,14 +168,15 @@ if (NOT PYCICLE_PR STREQUAL "${PYCICLE_BASE}")
       "${ERROR_VARIABLE}"
       "Can you access github from the build location?" )
   endif ( failed EQUAL 1 )
+  MESSAGE("made branch ${GIT_BRANCH}")
 
  #${CTEST_GIT_COMMAND} checkout ${PYCICLE_BASE};
  #                        ${CTEST_GIT_COMMAND} merge --no-edit -s recursive -X theirs origin/${PYCICLE_BRANCH};"
-
   set(CTEST_UPDATE_OPTIONS "${CTEST_SOURCE_DIRECTORY} ${GIT_BRANCH}")
-else()
+else(NOT PYCICLE_PR STREQUAL "${PYCICLE_BASE}")
   set(CTEST_SUBMISSION_TRACK "${PYCICLE_BASE}")
   set(WORK_DIR "${PYCICLE_PR_ROOT}")
+
   MESSAGE("just before command\n ${make_repo_copy_}")
   execute_process(
     COMMAND bash "-c" "-e"
