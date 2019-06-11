@@ -38,9 +38,9 @@ include(${PYCICLE_CONFIG_PATH}/${PYCICLE_HOST}.cmake)
 # debugging a bit simpler by allowing us to disable submits
 #######################################################################
 function(pycicle_submit)
-#  if(NOT DEBUG_MODE)
+  if(NOT DEBUG_MODE)
     ctest_submit(${ARGN})
-#  endif()
+  endif()
 endfunction()
 
 #######################################################################
@@ -146,17 +146,15 @@ if (NOT PYCICLE_PR STREQUAL "${PYCICLE_BASE}")
   endif ( failed EQUAL 1 )
 
   MESSAGE("${make_repo_copy_}")
+  MESSAGE("${CTEST_SOURCE_DIRECTORY}")
+  MESSAGE("${WORK_DIR}")
   execute_process(
     COMMAND bash "-c" "-e"
                        "${make_repo_copy_};
                        cd ${CTEST_SOURCE_DIRECTORY};
                        ${CTEST_GIT_COMMAND} checkout ${PYCICLE_BASE};
                        ${CTEST_GIT_COMMAND} pull origin ${PYCICLE_BASE};
-                       ${CTEST_GIT_COMMAND} reset --hard origin/${PYCICLE_BASE};
-                       ${CTEST_GIT_COMMAND} checkout -b ${GIT_BRANCH};
-                       ${CTEST_GIT_COMMAND} pull ${PYCICLE_BRANCH_REPO} ${PYCICLE_BRANCH};
-                       ${CTEST_GIT_COMMAND} checkout ${PYCICLE_BASE};
-                       ${CTEST_GIT_COMMAND} clean -fd;"
+                       ${CTEST_GIT_COMMAND} reset --hard origin/${PYCICLE_BASE};"
     WORKING_DIRECTORY "${WORK_DIR}"
     OUTPUT_VARIABLE output
     ERROR_VARIABLE  output
@@ -168,7 +166,31 @@ if (NOT PYCICLE_PR STREQUAL "${PYCICLE_BASE}")
       "${ERROR_VARIABLE}"
       "Can you access github from the build location?" )
   endif ( failed EQUAL 1 )
-  MESSAGE("made branch ${GIT_BRANCH}")
+
+  MESSAGE("Trying to make branch ${GIT_BRANCH}")
+
+  execute_process(COMMAND bash "-c" "-e"
+    "cd ${CTEST_SOURCE_DIRECTORY};
+     ${CTEST_GIT_COMMAND} checkout -b ${GIT_BRANCH};"
+    )
+  if ( failed EQUAL 1 )
+    MESSAGE( FATAL_ERROR "Update failed in ${CMAKE_CURRENT_LIST_FILE}. "
+      "${OUTPUT_VARIABLE}"
+      "${ERROR_VARIABLE}"
+      "Could not make PR branch!" )
+  endif ( failed EQUAL 1 )
+
+  execute_process(COMMAND bash "-c" "-e"    
+                       "cd ${CTEST_SOURCE_DIRECTORY};
+${CTEST_GIT_COMMAND} pull ${PYCICLE_BRANCH_REPO} ${PYCICLE_BRANCH};
+                       ${CTEST_GIT_COMMAND} checkout ${PYCICLE_BASE};
+                       ${CTEST_GIT_COMMAND} clean -fd;")
+  if ( failed EQUAL 1 )
+    MESSAGE( FATAL_ERROR "Update failed in ${CMAKE_CURRENT_LIST_FILE}. "
+      "${OUTPUT_VARIABLE}"
+      "${ERROR_VARIABLE}"
+      "Can you access github from the build location?" )
+  endif ( failed EQUAL 1 )
 
  #${CTEST_GIT_COMMAND} checkout ${PYCICLE_BASE};
  #                        ${CTEST_GIT_COMMAND} merge --no-edit -s recursive -X theirs origin/${PYCICLE_BRANCH};"

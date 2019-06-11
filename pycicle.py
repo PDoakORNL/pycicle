@@ -419,6 +419,8 @@ def needs_update(project_name, branch_id, branch_name, branch_sha, base_sha, bra
         try:
             f = open(status_file,'r')
             lines = f.readlines()
+            pyc_p.debug_print('branch_sha:', branch_sha, "written sha", lines[0].strip())
+            pyc_p.debug_print('base_sha:', base_sha, "written sha", lines[1].strip())
             if lines[0].strip() != branch_sha:
                 print(branch_id, branch_name, 'changed : trigger update')
                 update = True
@@ -676,7 +678,8 @@ if __name__ == "__main__":
                             else:
                                 print("{} does not have push access, PR will not be built.".format(commit_author.login))
                     else:
-                        choose_and_launch(args.project, machine, branch_id, branch_name, compiler_type, branch_repo=branch_repo)
+                        if update:
+                            choose_and_launch(args.project, machine, branch_id, branch_name, compiler_type, branch_repo=branch_repo)
 
             print("The Open PRs:")
             print(pr_list)
